@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"time"
 )
 
@@ -23,7 +22,7 @@ type Transaction struct {
 type Timestamp int64
 
 // Proof is an alias type for proof strings
-type Proof []byte
+type Proof string
 
 // ProofHash is an alias type for hash of proof strings
 type ProofHash string
@@ -36,8 +35,7 @@ type Block struct {
 	Index        int           `json:"index"`
 	Transactions []Transaction `json:"transactions,omitempty"`
 	Timestamp    Timestamp     `json:"timestamp"`
-	Proof        Proof         `json:"-"`
-	ProofBase64  string        `json:"proof"`
+	Proof        Proof         `json:"proof"`
 	PrevHash     PrevHash      `json:"prev_hash"`
 }
 
@@ -57,15 +55,16 @@ func (bc *Blockchain) GetSecondLastBlock() *Block {
 	return &bc.Chain[len(bc.Chain)-2]
 }
 
+// LastHash is a function to get the last hash.
+func (bc *Blockchain) LastHash() string {
+	Hash(bc.GetLastBlock().Proof, bc.GetSecondLastBlock())
+}
+
 // NextPattern is a function to get the next block's pattern.
-// uncompleted
 func (bc *Blockchain) NextPattern() string {
-	var hashes [8]ProofHash
-	for i := -7; i <= 0; i++ {
-		hashes[i+7] = Hash(bc.Chain[len(bc.Chain)+i].Proof, bc.Chain[len(bc.Chain)+i-1].Proof)
+	for i:=0, i<8,i++{
+
 	}
-	ValidProofHash(hashes)
-	return ""
 }
 
 // NewTransaction is a function to add a new transaction for the next block.
@@ -95,7 +94,6 @@ func (bc *Blockchain) NewBlock(proof Proof, prevHash PrevHash, timestamp Timesta
 
 // ToJSON is a function to generate JSON from a block
 func (bc *Block) ToJSON() []byte {
-	bc.ProofBase64 = base64.StdEncoding.EncodeToString(bc.Proof)
 	b, _ := json.Marshal(bc)
 	return b
 }
@@ -107,9 +105,8 @@ func NewBlockchain() *Blockchain {
 }
 
 // Hash is a function to get the hash of proof
-func Hash(proof Proof, lastProof Proof) ProofHash {
-	slice := sha256.Sum256(append([]byte(proof), ([]byte(lastProof))...))
-	return ProofHash(string(base64.StdEncoding.EncodeToString(slice[:])))
+func Hash(proof Proof, lastProof Proof) {
+	return base64.StdEncoding.EncodeToString(sha256.Sum256([]byte(proof + lastProof)))
 }
 
 // CreateZndkValidFunc is a function to create function to check a string start with the pattern.
@@ -188,24 +185,11 @@ func ValidProofHash(proofHashes [8]ProofHash) (bool, int) {
 
 // Mine is a function to mine zndcoin.
 func Mine(blockchain Blockchain, pattern string) {
-	f := CreateZndkValidFunc(pattern)
-	var i big.Int
-	bitlen := 0
-	hash := []byte{0}
-	one := big.NewInt(1)
-	for !f([]byte(base64.StdEncoding.EncodeToString(hash))) {
-		hash = []byte(Hash(Proof(i.Bytes()), blockchain.GetLastBlock().Proof))
-		if bitlen != i.BitLen() {
-			bitlen = i.BitLen()
-			fmt.Printf("bitlen: %d\n", bitlen)
-		}
-		i.Add(&i, one)
-	}
-	fmt.Printf("%d %s", i.Int64(), base64.StdEncoding.EncodeToString(hash))
+	CreateZndkValidFunc(pattern)
+	Hash
 }
 
 func main() {
 	blockchain := Blockchain{}
-	blockchain.NewBlock(Proof([]byte{}), "", Timestamp(time.Now().UnixNano()))
-	Mine(blockchain, "doko")
+	blockchain.NewBlock("", "", Timestamp(time.Now().UnixNano()))
 }
