@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"time"
 )
 
@@ -88,6 +87,16 @@ func (bc *Blockchain) LastBlock() *Block {
 
 // SecondLastBlock is a function to get the second last block.
 func (bc *Blockchain) SecondLastBlock() *Block {
+	if len(bc.Chain) < 2 {
+		block := Block{
+			Index:        0,
+			Timestamp:    Timestamp(time.Now().UnixNano()),
+			Transactions: nil,
+			Proof:        Proof([]byte{0}),
+			PrevHash:     "",
+		}
+		return &block
+	}
 	return &bc.Chain[len(bc.Chain)-2]
 }
 
@@ -221,11 +230,11 @@ func (proofBase64 ProofBase64) Decode() Proof {
 func main() {
 	blockchain := Blockchain{}
 
-	ch1 := make(chan string)
-	ch2 := make(chan string)
+	ch1 := make(chan ProofHash)
+	ch2 := make(chan Proof)
 	start := int64(0)
 	for {
 		go Mine(&blockchain, &start, ch1, ch2)
-		fmt.Printf("hash:\t%s\nproof:\t%s\n len:%d\n", <-ch1, <-ch2, len(blockchain.Chain))
+		fmt.Printf("hash:\t%s\nproof:\t%s%s\n len:%d\n", (<-ch1).Encode(), (<-ch2).Encode(), blockchain.SecondLastBlock().Proof.Encode(), len(blockchain.Chain))
 	}
 }
