@@ -7,7 +7,7 @@ import (
 )
 
 // Mine is a function to mine zndcoin.
-func Mine(blockchain *Blockchain, start *int64, ch chan string) {
+func Mine(blockchain *Blockchain, start *int64, ch1 chan string, ch2 chan string) {
 	pattern := blockchain.NextBlockPattern()
 
 	f := CreateZndkValidFunc(pattern)
@@ -28,5 +28,6 @@ func Mine(blockchain *Blockchain, start *int64, ch chan string) {
 	}
 	blockchain.NewBlock(proof, "", Timestamp(time.Now().UnixNano()))
 	// fmt.Printf("%d %s\n", i.Int64(), hash.Encode())
-	ch <- string(hash.Encode())
+	ch1 <- string(hash)
+	ch2 <- string(proof) + ":" + string(blockchain.SecondLastBlock())
 }

@@ -86,8 +86,8 @@ func (bc *Blockchain) LastBlock() *Block {
 	return &bc.Chain[len(bc.Chain)-1]
 }
 
-// GetSecondLastBlock is a function to get the second last block.
-func (bc *Blockchain) GetSecondLastBlock() *Block {
+// SecondLastBlock is a function to get the second last block.
+func (bc *Blockchain) SecondLastBlock() *Block {
 	return &bc.Chain[len(bc.Chain)-2]
 }
 
@@ -222,9 +222,10 @@ func main() {
 	blockchain := Blockchain{}
 
 	ch1 := make(chan string)
+	ch2 := make(chan string)
 	start := int64(0)
 	for {
-		go Mine(&blockchain, &start, ch1)
-		fmt.Printf("hash:\t%s\n len:%d\n", <-ch1, len(blockchain.Chain))
+		go Mine(&blockchain, &start, ch1, ch2)
+		fmt.Printf("hash:\t%s\nproof:\t%s\n len:%d\n", <-ch1, <-ch2, len(blockchain.Chain))
 	}
 }
